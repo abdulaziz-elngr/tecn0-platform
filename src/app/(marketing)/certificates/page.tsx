@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { EmptyState } from "@/components/ui/card";
+import { CertificateGrid } from "@/components/public/certificate-grid";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default async function CertificatesPage({
 
       <div className="mt-8 flex flex-wrap gap-2">
         {categories.map((c) => (
-          <a
+          
             key={c}
             href={c === "All" ? "/certificates" : `/certificates?category=${c}`}
             className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--slate)] transition-colors hover:border-[var(--gold)]"
@@ -45,28 +46,19 @@ export default async function CertificatesPage({
           <EmptyState title="No certificates published yet." description="Check back soon." />
         </div>
       ) : (
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {certificates.map((cert) => (
-            <div
-              key={cert.id}
-              className="rounded-[var(--radius-lg)] border border-[var(--border)] p-5 transition-colors hover:border-[var(--gold)]"
-            >
-              {cert.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={cert.image}
-                  alt={cert.title}
-                  className="mb-4 h-32 w-full rounded-[var(--radius-md)] object-cover"
-                />
-              )}
-              <p className="font-medium">{cert.title}</p>
-              <p className="text-sm text-[var(--slate)]">{cert.organization}</p>
-              <p className="mt-2 text-xs text-[var(--slate)] font-data">
-                {cert.issueDate.toLocaleDateString()}
-              </p>
-            </div>
-          ))}
-        </div>
+        <CertificateGrid
+          certificates={certificates.map((c) => ({
+            id: c.id,
+            title: c.title,
+            organization: c.organization,
+            issueDate: c.issueDate.toISOString(),
+            credentialId: c.credentialId,
+            credentialUrl: c.credentialUrl,
+            image: c.image,
+            category: c.category,
+            description: c.description,
+          }))}
+        />
       )}
     </main>
   );
