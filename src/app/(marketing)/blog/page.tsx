@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { EmptyState } from "@/components/ui/card";
 import type { Metadata } from "next";
 
@@ -44,18 +45,31 @@ export default async function BlogIndexPage({
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}
-              className="group rounded-[var(--radius-lg)] border border-[var(--border)] p-5 transition-colors hover:border-[var(--gold)]"
+              className="group overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] transition-colors hover:border-[var(--gold)]"
             >
-              {post.category && (
-                <p className="text-xs font-medium text-[var(--gold-deep)]">{post.category.name}</p>
+              {post.coverImage && (
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-[var(--border)]">
+                  <Image
+                    src={post.coverImage}
+                    alt={post.title}
+                    fill
+                    unoptimized
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
               )}
-              <h2 className="mt-1 font-display text-lg font-semibold group-hover:text-[var(--gold-deep)]">
-                {post.title}
-              </h2>
-              <p className="mt-2 text-sm text-[var(--slate)]">{post.excerpt}</p>
-              <p className="mt-4 text-xs text-[var(--slate)] font-data">
-                {post.publishedAt?.toLocaleDateString()} · {post.readingTimeMins} min read
-              </p>
+              <div className="p-5">
+                {post.category && (
+                  <p className="text-xs font-medium text-[var(--gold-deep)]">{post.category.name}</p>
+                )}
+                <h2 className="mt-1 font-display text-lg font-semibold group-hover:text-[var(--gold-deep)]">
+                  {post.title}
+                </h2>
+                <p className="mt-2 text-sm text-[var(--slate)]">{post.excerpt}</p>
+                <p className="mt-4 text-xs text-[var(--slate)] font-data">
+                  {post.publishedAt?.toLocaleDateString()} · {post.readingTimeMins} min read
+                </p>
+              </div>
             </Link>
           ))}
         </div>
