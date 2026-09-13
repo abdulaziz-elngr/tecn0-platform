@@ -26,7 +26,6 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
     return (localStorage.getItem("theme") as "light" | "dark") || "dark";
   });
 
-  // Close the drawer on Escape (accessibility requirement, spec §49).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -35,7 +34,6 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // Lock body scroll while the drawer is open.
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -51,53 +49,58 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--paper)]/90 backdrop-blur">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center">
-          <BrandLogo logoUrl={logoUrl} imgClassName="h-26 w-auto object-contain" />
-        </Link>
+    <>
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--paper)]/90 backdrop-blur">
+        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <Link href="/" className="flex items-center">
+            <BrandLogo logoUrl={logoUrl} imgClassName="h-26 w-auto object-contain" />
+          </Link>
 
-        <ul className="hidden items-center gap-1 md:flex">
-          {LINKS.map(({ href, label }) => {
-            const active = href === "/" ? pathname === href : pathname.startsWith(href);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className={cn(
-                    "rounded-[var(--radius-sm)] px-3 py-2 text-sm transition-colors",
-                    active
-                      ? "font-medium text-[var(--gold-deep)]"
-                      : "text-[var(--slate)] hover:text-[var(--ink)]"
-                  )}
-                >
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          <ul className="hidden items-center gap-1 md:flex">
+            {LINKS.map(({ href, label }) => {
+              const active = href === "/" ? pathname === href : pathname.startsWith(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={cn(
+                      "rounded-[var(--radius-sm)] px-3 py-2 text-sm transition-colors",
+                      active
+                        ? "font-medium text-[var(--gold-deep)]"
+                        : "text-[var(--slate)] hover:text-[var(--ink)]"
+                    )}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            aria-label="Toggle color theme"
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--slate)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={open}
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] md:hidden"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-        </div>
-      </nav>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle color theme"
+              className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] text-[var(--slate)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() => setOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={open}
+              className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] md:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          </div>
+        </nav>
+      </header>
 
-      {/* Mobile drawer + overlay */}
+      {/* Mobile drawer + overlay — rendered as siblings of <header>, NOT
+          nested inside it, because <header> has backdrop-blur, and a
+          non-none backdrop-filter makes an element a containing block for
+          position:fixed descendants (CSS spec). That was the bug. */}
       <div
         className={cn(
           "fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 md:hidden",
@@ -141,6 +144,6 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
           })}
         </ul>
       </div>
-    </header>
+    </>
   );
 }
