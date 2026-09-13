@@ -54,7 +54,7 @@ export function Navbar({ logoUrl }: { logoUrl?: string | null } = {}) {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--paper)]/90 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center">
-          <BrandLogo logoUrl={logoUrl} imgClassName="h-26 w-auto object-contain" />
+          <BrandLogo logoUrl={logoUrl} imgClassName="h-50 w-auto object-contain" />
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
