@@ -95,20 +95,26 @@ export default async function AboutPage() {
       {skillCategories.length > 0 && (
         <div className="mt-16">
           <h2 className="font-display text-xl font-semibold">Skills</h2>
-          <div className="mt-6 flex flex-col gap-6">
+          <div className="mt-6 flex flex-col gap-8">
             {skillCategories
               .filter((c) => c.skills.length > 0)
               .map((cat) => (
                 <div key={cat.id}>
                   <p className="text-sm font-medium text-[var(--slate)]">{cat.name}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                     {cat.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="rounded-full border border-[var(--border)] px-3 py-1 text-xs"
-                      >
-                        {skill.name}
-                      </span>
+                      <div key={skill.id}>
+                        <div className="mb-1 flex items-center justify-between text-xs">
+                          <span>{skill.name}</span>
+                          <span className="text-[var(--slate)]">{skill.proficiency}%</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--border)]">
+                          <div
+                            className="h-full rounded-full bg-[var(--gold)]"
+                            style={{ width: `${Math.min(100, Math.max(0, skill.proficiency))}%` }}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
