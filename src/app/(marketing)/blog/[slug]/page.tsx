@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { trackEvent } from "@/lib/services/analytics";
 
 interface Props {
@@ -66,6 +67,19 @@ export default async function BlogPostPage({ params }: Props) {
         {post.publishedAt?.toLocaleDateString()} · {post.readingTimeMins} min read ·{" "}
         {post.author.name}
       </p>
+
+      {post.coverImage && (
+        <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-lg)] bg-[var(--border)]">
+          <Image
+            src={post.coverImage}
+            alt={post.title}
+            fill
+            unoptimized
+            priority
+            className="object-cover"
+          />
+        </div>
+      )}
 
       <div className="prose prose-neutral mt-10 max-w-none whitespace-pre-wrap text-[var(--ink)]">
         {post.content}
