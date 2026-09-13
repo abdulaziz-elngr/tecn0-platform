@@ -1,13 +1,12 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
+import { authConfig } from "@/lib/auth.config";
+
+const { auth } = NextAuth(authConfig);
 
 /**
  * Layer 1 of defense-in-depth auth (spec §8). This blocks unauthenticated
  * requests to /admin/* at the edge, before any page or server action runs.
- * Layer 2 (server-side session check inside each admin page/layout) and
- * layer 3 (authorization checks inside individual server actions) are
- * implemented separately — this middleware alone is never treated as
- * sufficient on its own.
  */
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
