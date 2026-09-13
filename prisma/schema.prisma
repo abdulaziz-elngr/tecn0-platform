@@ -1,0 +1,533 @@
+// Tecno Team — Personal Engineering Platform
+// Prisma schema. PostgreSQL. Run `npx prisma migrate dev` after setting DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTH / USERS
+// ============================================================
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(ADMIN)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile       Profile?
+  blogPosts     BlogPost[]
+  activityLogs  ActivityLog[]
+  sessions      Session[]
+  accounts      Account[]
+
+  @@index([email])
+}
+
+// Auth.js required tables (Credentials + session strategy = database sessions optional,
+// kept here so the adapter works if OAuth providers are added later).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// PROFILE (single-row CMS for hero/about content)
+// ============================================================
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  fullName          String   @default("Abdulaziz El-Nagar")
+  professionalTitle String   @default("IoT Engineer & Computer Science Student")
+  heroHeadline      String   @default("Building smart solutions where IoT, software, and AI meet.")
+  heroDescription   String?  @db.Text
+  aboutText         String?  @db.Text
+  shortIntro        String?  @db.Text
+  profileImage      String?
+  profileImagePublicId String?
+  cvUrl             String?
+  cvPublicId        String?
+  email             String?
+  phone             String?
+  location          String?
+  availability      String?  @default("Open to opportunities")
+  currentFocus      String?  @db.Text
+  futureGoals       String?  @db.Text
+  updatedAt         DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialLinks  SocialLink[]
+}
+
+// ============================================================
+// CONTENT OWNERSHIP (Personal vs Tecno Team vs Both)
+// ============================================================
+//
+// Added for the dual personal/Tecno identity system. Nullable and additive
+// on every model it touches: every existing Project/Experience/SocialLink/
+// Service row keeps working exactly as before (still visible everywhere it
+// already appeared) with `owner = null` ("unclassified") until an admin
+// explicitly picks Personal / Tecno Team / Both from the CMS. We do NOT
+// infer or backfill a guessed owner for existing rows — per the safety
+// requirement, ownership that can't be safely inferred from data the admin
+// actually entered is left null rather than invented.
+enum ContentOwner {
+  PERSONAL
+  TECNO
+  BOTH
+}
+
+// ============================================================
+// PROJECTS
+// ============================================================
+
+model Project {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  shortDescription String
+  fullDescription  String?  @db.Text
+  category         String
+  technologies     String[] @default([])
+  role             String?
+  projectDate      DateTime?
+  problem          String?  @db.Text
+  solution         String?  @db.Text
+  features         String[] @default([])
+  challenges       String?  @db.Text
+  results          String?  @db.Text
+  githubUrl        String?
+  liveUrl          String?
+  featuredImage    String?
+  published        Boolean  @default(false)
+  featured         Boolean  @default(false)
+  displayOrder     Int      @default(0)
+  // Nullable/additive — see ContentOwner comment above. Existing projects
+  // stay null ("unclassified") and remain visible under "All" until an
+  // admin picks Personal / Tecno Team / Both.
+  owner            ContentOwner?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  images  ProjectImage[]
+  views   AnalyticsEvent[]
+
+  @@index([slug])
+  @@index([published, featured])
+}
+
+model ProjectImage {
+  id           String   @id @default(cuid())
+  projectId    String
+  url          String
+  alt          String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ============================================================
+// TECNO TEAM (distinct brand section — Phase 7)
+// ============================================================
+// New, purely additive tables: they don't touch any existing model. Team
+// projects/services/social links are NOT duplicated here — they're the
+// same Project/Service/SocialLink rows tagged owner = TECNO or BOTH, per
+// "reuse the existing CMS, don't duplicate data."
+
+model TecnoTeamProfile {
+  id           String   @id @default(cuid())
+  description  String?  @db.Text
+  mission      String?  @db.Text
+  vision       String?  @db.Text
+  contactEmail String?
+  updatedAt    DateTime @updatedAt
+}
+
+model TeamMember {
+  id            String   @id @default(cuid())
+  name          String
+  role          String?
+  bio           String?  @db.Text
+  photoUrl      String?
+  photoPublicId String?
+  websiteUrl    String?
+  displayOrder  Int      @default(0)
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([published, displayOrder])
+}
+
+// ============================================================
+// SKILLS
+// ============================================================
+
+model SkillCategory {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  slug         String  @unique
+  displayOrder Int     @default(0)
+
+  skills Skill[]
+}
+
+model Skill {
+  id           String   @id @default(cuid())
+  name         String
+  categoryId   String
+  proficiency  Int      @default(50) // 0-100
+  icon         String?
+  published    Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  category SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+}
+
+// ============================================================
+// EXPERIENCE / JOURNEY TIMELINE
+// ============================================================
+
+model Experience {
+  id           String   @id @default(cuid())
+  year         String
+  title        String
+  description  String   @db.Text
+  category     String?
+  icon         String?
+  displayOrder Int      @default(0)
+  published    Boolean  @default(true)
+  // Nullable/additive — unclassified existing rows stay visible; see
+  // ContentOwner comment above Project.
+  owner        ContentOwner?
+  // Distinguishes a company/team role from education/personal milestones
+  // within the same timeline, independent of `owner`. Optional so existing
+  // rows are unaffected; the admin form defaults new items to "OTHER".
+  entryType    ExperienceType? @default(OTHER)
+  organization String?
+  startDate    DateTime?
+  endDate      DateTime?
+  current      Boolean  @default(false)
+  image        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum ExperienceType {
+  PERSONAL
+  EDUCATION
+  WORK
+  EVENT
+  OTHER
+}
+
+// ============================================================
+// CERTIFICATES
+// ============================================================
+
+model Certificate {
+  id            String   @id @default(cuid())
+  title         String
+  organization  String
+  issueDate     DateTime
+  credentialId  String?
+  credentialUrl String?
+  image         String?
+  category      String
+  description   String?  @db.Text
+  published     Boolean  @default(true)
+  featured      Boolean  @default(false)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([published, featured])
+}
+
+// ============================================================
+// SERVICES
+// ============================================================
+
+model Service {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @db.Text
+  icon         String?
+  features     String[] @default([])
+  displayOrder Int      @default(0)
+  published    Boolean  @default(true)
+  // Nullable/additive — see ContentOwner comment above Project.
+  owner        ContentOwner?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============================================================
+// BLOG
+// ============================================================
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogCategory {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  posts BlogPost[]
+}
+
+model BlogTag {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  posts BlogPostTag[]
+}
+
+model BlogPost {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String
+  content         String     @db.Text
+  coverImage      String?
+  categoryId      String?
+  authorId        String
+  readingTimeMins Int        @default(3)
+  seoTitle        String?
+  seoDescription  String?
+  status          PostStatus @default(DRAFT)
+  featured        Boolean    @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  author   User          @relation(fields: [authorId], references: [id])
+  category BlogCategory? @relation(fields: [categoryId], references: [id])
+  tags     BlogPostTag[]
+  views    AnalyticsEvent[]
+
+  @@index([slug])
+  @@index([status, publishedAt])
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+// ============================================================
+// MESSAGES (contact form inbox)
+// ============================================================
+
+enum MessageStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String        @db.Text
+  status    MessageStatus @default(UNREAD)
+  ipHash    String?
+  createdAt DateTime      @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PROJECT_VIEW
+  BLOG_VIEW
+}
+
+model AnalyticsEvent {
+  id         String             @id @default(cuid())
+  type       AnalyticsEventType
+  path       String
+  projectId  String?
+  blogPostId String?
+  referrer   String?
+  userAgent  String?
+  createdAt  DateTime           @default(now())
+
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  blogPost BlogPost? @relation(fields: [blogPostId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([path])
+}
+
+// ============================================================
+// SITE SETTINGS (single row)
+// ============================================================
+
+model SiteSetting {
+  id                 String   @id @default(cuid())
+  siteName           String   @default("Tecno Team")
+  brandName          String   @default("Tecno Team")
+  primaryColor       String   @default("#D4A72C")
+  secondaryColor     String   @default("#0B0B0B")
+  darkModeDefault    Boolean  @default(true)
+  maintenanceMode    Boolean  @default(false)
+  contactEmail       String?
+  availabilityStatus String?  @default("Open to opportunities")
+
+  // Branding — Tecno Team logo. Nullable/additive: existing rows keep
+  // working with no logo (gold placeholder / text mark) until an admin
+  // uploads one from Admin -> Branding. publicId is stored alongside the
+  // URL so replacing/removing a logo can actually delete the old
+  // Cloudinary asset instead of leaving it orphaned.
+  logoUrl          String?
+  logoPublicId     String?
+  logoDarkUrl      String?
+  logoDarkPublicId String?
+  faviconUrl       String?
+  faviconPublicId  String?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String[] @default([])
+  ogTitle         String?
+  ogDescription   String?
+  ogImage         String?
+  twitterCard     String?  @default("summary_large_image")
+  canonicalUrl    String?
+  robotsIndex     Boolean  @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================
+// SOCIAL LINKS
+// ============================================================
+
+enum SocialPlatform {
+  GITHUB
+  LINKEDIN
+  WHATSAPP
+  EMAIL
+  FACEBOOK
+  INSTAGRAM
+  OTHER
+}
+
+model SocialLink {
+  id           String         @id @default(cuid())
+  platform     SocialPlatform
+  label        String
+  url          String
+  enabled      Boolean        @default(true)
+  displayOrder Int            @default(0)
+  profileId    String?
+  // Nullable/additive — see ContentOwner comment above Project. Existing
+  // links (all currently attached via profileId) are left unclassified
+  // rather than auto-set to PERSONAL, per the "don't infer" instruction —
+  // an admin confirms this explicitly in Admin -> Social Links.
+  owner        ContentOwner?
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// ACTIVITY LOGS
+// ============================================================
+
+enum ActivityAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  UNPUBLISH
+  SETTINGS_CHANGE
+}
+
+model ActivityLog {
+  id         String         @id @default(cuid())
+  userId     String
+  action     ActivityAction
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}

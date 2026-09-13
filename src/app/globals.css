@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TECNO TEAM — DESIGN TOKENS
+   Single source of truth for brand color. Swap --gold-* here
+   (or via /admin/settings → SiteSetting.primaryColor at runtime)
+   and the entire product updates — public site and admin share
+   this file.
+   ============================================================ */
+
+:root {
+  /* Brand gold — warm brass, closer to solder/circuit gold than
+     a generic "yellow" accent. Matches the Tecno Team wordmark.
+     Overridable at runtime from Admin -> Settings -> Branding
+     (SiteSetting.primaryColor / secondaryColor) — see the inline
+     <style> tag rendered in the root layout. --gold-deep/--gold-soft
+     derive from --gold via color-mix() so a single admin-set color
+     automatically produces working hover/accent shades. */
+  --gold: #c9a227;
+  --gold-deep: color-mix(in srgb, var(--gold) 70%, black);
+  --gold-soft: color-mix(in srgb, var(--gold) 55%, white);
+  /* Secondary brand color (SiteSetting.secondaryColor). Deliberately NOT
+     wired into --ink/--paper/--border (text/surface colors): those must
+     stay theme-inverted for light/dark contrast, and letting an
+     admin-chosen color override them risks making text unreadable.
+     --brand-secondary drives clearly-decorative brand accents instead
+     (currently: the circuit illustration's outer node rings). */
+  --brand-secondary: #0b0b0b;
+
+  /* Light mode surfaces */
+  --paper: #faf9f6;
+  --panel: #ffffff;
+  --ink: #14140f;
+  --slate: #6b6558;
+  --border: rgba(20, 20, 15, 0.1);
+
+  --success: #3f9d6e;
+  --danger: #c2453f;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-soft: 0 1px 2px rgba(20, 20, 15, 0.04), 0 8px 24px rgba(20, 20, 15, 0.06);
+  --shadow-lift: 0 4px 12px rgba(20, 20, 15, 0.08), 0 16px 40px rgba(20, 20, 15, 0.1);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-med: 320ms;
+  --dur-slow: 600ms;
+}
+
+[data-theme="dark"] {
+  --paper: #0d0d0b;
+  --panel: #171713;
+  --ink: #f3f1e9;
+  --slate: #a39c89;
+  --border: rgba(243, 241, 233, 0.1);
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-soft: var(--gold-soft);
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-ibm-plex-sans);
+  --font-data: var(--font-ibm-plex-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  transition: background var(--dur-med) var(--ease-out), color var(--dur-med) var(--ease-out);
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+}
+
+.font-data {
+  font-family: var(--font-data), ui-monospace, monospace;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+/* Focus ring — visible keyboard focus everywhere, accessibility requirement */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Circuit-grid background used behind hero/section panels — subtle, not decorative noise */
+.circuit-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+/* Custom cursor (spec §50): hide the native cursor only once the JS cursor
+   has confirmed a fine pointer is present — see custom-cursor.tsx. */
+html.custom-cursor-active,
+html.custom-cursor-active a,
+html.custom-cursor-active button {
+  cursor: none;
+}
