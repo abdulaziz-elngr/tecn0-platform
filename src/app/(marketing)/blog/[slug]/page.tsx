@@ -81,7 +81,7 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       )}
 
-      <div className="prose prose-neutral mt-10 max-w-none whitespace-pre-wrap text-[var(--ink)]">
+      <div dir="auto" className="prose prose-neutral mt-10 max-w-none whitespace-pre-wrap text-[var(--ink)]">
         {post.content}
       </div>
 
